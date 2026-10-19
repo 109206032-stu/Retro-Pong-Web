@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Retro Pong Web v3.0 - 復古乒乓球遊戲</title>
-  <meta name="description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援獨立音效/原創8-bit背景音樂開關、四級 AI 難易度、目標分數自訂與版本更新日誌。" />
+  <meta name="description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援畫面更新率鎖定（30/60/144/無上限單鍵切換）、獨立音效/原創8-bit背景音樂、四級 AI 難易度與目標分數自訂。" />
   <meta property="og:title" content="Retro Pong Web v3.0 - 復古乒乓球遊戲" />
-  <meta property="og:description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援獨立音效/原創8-bit背景音樂開關、四級 AI 難易度、目標分數自訂與版本更新日誌。" />
+  <meta property="og:description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援畫面更新率鎖定（30/60/144/無上限單鍵切換）、獨立音效/原創8-bit背景音樂、四級 AI 難易度與目標分數自訂。" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -155,7 +155,7 @@
       padding-bottom: 2px;
     }
 
-    /* 遊戲設定區塊 (目標分數與 AI 難度) */
+    /* 遊戲設定區塊 (目標分數、AI 難度、更新率與音效) */
     .settings-panel {
       width: 100%;
       max-width: 580px;
@@ -499,13 +499,14 @@
 <body>
 
   <div id="game-container">
-    <!-- 頂部資訊工具列 (含獨立音效與背景音樂開關) -->
+    <!-- 頂部資訊工具列 (含獨立音效、背景音樂與單鍵更新率開關) -->
     <div class="header-bar">
       <span class="brand-tag">
         RETRO PONG
         <span style="background: #ffffff; color: #000000; padding: 1px 4px; font-size: 10px; font-weight: 900;">v3.0</span>
       </span>
       <div class="toolbar">
+        <button id="fpsToggleBtn" class="tool-btn" title="切換畫面更新率 (30 / 60 / 144 / 無上限)">FPS: 60</button>
         <button id="sfxToggleBtn" class="tool-btn" title="切換音效 (SFX)">SFX: ON</button>
         <button id="bgmToggleBtn" class="tool-btn" title="切換背景音樂 (BGM)">BGM: ON</button>
         <button id="pauseToggleBtn" class="tool-btn" title="暫停遊戲 (Space/P)">PAUSE (P)</button>
@@ -521,7 +522,7 @@
         <div class="game-title">RETRO PONG</div>
         <div class="game-version-badge">VERSION 3.0 • RETRO CHIPTUNE EDITION</div>
 
-        <!-- 遊戲設定區塊 (目標分數與 AI 難度) -->
+        <!-- 遊戲設定區塊 (目標分數、AI 難度、更新率與音效) -->
         <div class="settings-panel">
           <!-- 目標分數設定 -->
           <div class="setting-row">
@@ -551,6 +552,16 @@
               <button class="opt-btn diff-preset" data-diff="MASTER">大師</button>
             </div>
             <div id="diffDesc" class="difficulty-desc">中級：標準速度與防禦，攻守均衡。</div>
+          </div>
+
+          <!-- 畫面更新率單鍵切換設定 -->
+          <div class="setting-row">
+            <span class="setting-label">
+              <span>●</span> 畫面更新率 (FPS):
+            </span>
+            <div class="setting-options">
+              <button id="menuFpsBtn" class="opt-btn active" title="點擊單一按鈕依序循環切換：30 -> 60 -> 144 -> 無上限">FPS: 60 [點擊切換]</button>
+            </div>
           </div>
 
           <!-- 音效與音樂獨立控制列 -->
@@ -607,9 +618,10 @@
           <div class="version-entry">
             <div class="version-head">
               <span class="version-tag">VERSION 3.0</span>
-              <span class="version-badge-note">CURRENT • 音訊重大升級</span>
+              <span class="version-badge-note">CURRENT • 音訊與更新率重大升級</span>
             </div>
             <ul class="changelog-list">
+              <li><strong>畫面更新率鎖定 (FPS Limiter)</strong>：新增單一按鈕循環切換 30 FPS、60 FPS、144 FPS 與無上限，採用物理次步進 (Sub-stepping) 與 Delta-time 模擬，確保各更新率下球速與手感完全一致且不穿牆。</li>
               <li><strong>音效全面修復</strong>：重構 Web Audio API 啟動器，解決瀏覽器自動播放安全原則導致無聲的問題。</li>
               <li><strong>8-bit 原創背景音樂 (BGM)</strong>：透過原生合成器即時生成經典街機方波與三角波旋律（100% 原創免版權）。</li>
               <li><strong>音訊獨立開關控制</strong>：可獨立開啟或關閉「遊戲音效 (SFX)」與「背景音樂 (BGM)」。</li>
@@ -694,11 +706,11 @@
   <script>
     /**
      * Retro Pong Web v3.0
-     * 新增特點：
-     * 1. 徹底修復 Web Audio API 自動播放策略，保證首次互動即解鎖音效
-     * 2. 內建 100% 原創免版權 8-bit Chiptune 背景音樂程序合成器 (零依賴、無外部音檔)
-     * 3. 獨立 SFX 音效與 BGM 背景音樂切換開關
-     * 4. 更新日誌 (Changelog) 彈窗
+     * 支援：
+     * 1. 畫面更新率 (FPS Limiter) 單鍵循環切換：30 -> 60 -> 144 -> 無上限
+     * 2. 物理次步進 (Sub-stepping) 與 Delta-time 模擬，不論何種 FPS 球速均恆定不穿牆
+     * 3. Web Audio API 原生音訊解鎖與原創 8-bit 免版權背景音樂
+     * 4. 獨立 SFX / BGM 切換開關與更新日誌
      */
 
     // --- 遊戲常數與設定 ---
@@ -722,6 +734,15 @@
       PVE: 'PVE',
       PVP: 'PVP'
     };
+
+    // --- 畫面更新率模式定義 ---
+    const FPS_MODES = [
+      { label: '30', target: 30, desc: '30 FPS (經典步進復古感)' },
+      { label: '60', target: 60, desc: '60 FPS (標準街機流暢度)' },
+      { label: '144', target: 144, desc: '144 FPS (高更新率順滑)' },
+      { label: '無上限', target: 0, desc: '無上限 (最高螢幕更新率)' }
+    ];
+    let currentFpsIdx = 1; // 預設 60 FPS
 
     const AIDifficulty = {
       NOVICE: {
@@ -781,6 +802,13 @@
     let serveCountdown = 0;
     let serveMessage = '';
 
+    // FPS 計算與節流計時器
+    let lastRenderTimestamp = performance.now();
+    let lastPhysicsTimestamp = performance.now();
+    let frameCounter = 0;
+    let lastFpsCalcTime = performance.now();
+    let realFpsDisplay = 60;
+
     // Canvas 與繪圖環境
     const canvas = document.getElementById('pongCanvas');
     const ctx = canvas.getContext('2d');
@@ -795,6 +823,8 @@
     const matchMetaText = document.getElementById('matchMetaText');
     const sfxToggleBtn = document.getElementById('sfxToggleBtn');
     const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+    const fpsToggleBtn = document.getElementById('fpsToggleBtn');
+    const menuFpsBtn = document.getElementById('menuFpsBtn');
     const pauseToggleBtn = document.getElementById('pauseToggleBtn');
     const targetScoreDisplay = document.getElementById('targetScoreDisplay');
     const diffDesc = document.getElementById('diffDesc');
@@ -802,7 +832,7 @@
     const menuBgmBtn = document.getElementById('menuBgmBtn');
 
     // ==========================================================================
-    // 4. 強韌的 Web Audio 音訊核心 (SFX + 原創 8-bit BGM 合成器)
+    // 4. Web Audio 音訊核心 (SFX + 原創 8-bit BGM 合成器)
     // ==========================================================================
     let audioCtx = null;
     let sfxMasterGain = null;
@@ -810,16 +840,12 @@
     let bgmIsPlaying = false;
     let bgmTimerId = null;
 
-    /**
-     * 安全建立並解鎖瀏覽器 AudioContext
-     */
     function initAudio() {
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
           audioCtx = new AudioContextClass();
 
-          // 建立獨立的音效與音樂 Gain 總線
           sfxMasterGain = audioCtx.createGain();
           sfxMasterGain.gain.setValueAtTime(sfxEnabled ? 0.35 : 0.0, audioCtx.currentTime);
           sfxMasterGain.connect(audioCtx.destination);
@@ -837,20 +863,15 @@
       return audioCtx;
     }
 
-    // 任何使用者操作皆主動解鎖音訊
     ['click', 'keydown', 'touchstart', 'mousedown'].forEach(evtType => {
       window.addEventListener(evtType, () => {
         initAudio();
-        // 若在遊戲中且 BGM 開啟，確保背景音樂啟動
         if (currentState === GameState.PLAYING && !isPaused && bgmEnabled && !bgmIsPlaying) {
           startBgm();
         }
       }, { passive: true });
     });
 
-    /**
-     * 播放短音效 (8-bit 方波)
-     */
     function playTone(freq, duration = 0.08, type = 'square') {
       if (!sfxEnabled) return;
       try {
@@ -865,7 +886,6 @@
 
         const now = actx.currentTime;
         gain.gain.setValueAtTime(1.0, now);
-        // 使用安全的 linearRamp 避免 exponentialRamp 在 0 時報錯
         gain.gain.linearRampToValueAtTime(0.01, now + duration);
 
         osc.connect(gain);
@@ -878,25 +898,20 @@
       }
     }
 
-    // --- 具體音效 ---
     function soundPaddleHit() {
-      // 撞板：清脆的 466Hz (Bb4) 快速方波
       playTone(466, 0.08, 'square');
     }
 
     function soundWallHit() {
-      // 撞牆：低沈 220Hz (A3) 方波
       playTone(220, 0.06, 'square');
     }
 
     function soundScore() {
-      // 得分：歡樂雙音
       playTone(392, 0.09, 'square');
       setTimeout(() => playTone(523, 0.14, 'square'), 90);
     }
 
     function soundGameOver() {
-      // 獲勝音效：經典街機四階勝利琶音
       const notes = [261, 329, 392, 523];
       notes.forEach((freq, idx) => {
         setTimeout(() => playTone(freq, 0.12, 'square'), idx * 110);
@@ -904,13 +919,11 @@
     }
 
     // ==========================================================================
-    // 5. 原創 8-bit Chiptune 背景音樂程序生成器 (100% 免版權、零外部檔案)
+    // 5. 原創 8-bit Chiptune 背景音樂程序生成器
     // ==========================================================================
-    // 經典復古小調琶音迴圈 (Am -> F -> C -> G)
-    const BGM_TEMPO = 136; // BPM
-    const STEP_DURATION = 60 / BGM_TEMPO / 4; // 16分音符長度
+    const BGM_TEMPO = 136;
+    const STEP_DURATION = 60 / BGM_TEMPO / 4;
 
-    // 音符頻率對照表
     const NOTE_FREQ = {
       'A2': 110.00, 'C3': 130.81, 'E3': 164.81, 'F2': 87.31,
       'G2': 98.00,  'A3': 220.00, 'B3': 246.94, 'C4': 261.63,
@@ -919,7 +932,6 @@
       '-': 0
     };
 
-    // 主旋律序列 (32 拍循環)
     const MELODY_SEQUENCE = [
       'A4', 'C5', 'E5', 'A4', 'C5', 'E5', 'A4', 'C5',
       'F4', 'A4', 'C5', 'F4', 'A4', 'C5', 'F4', 'A4',
@@ -927,7 +939,6 @@
       'G4', 'B4', 'D4', 'G4', 'B4', 'D4', 'G4', 'B4'
     ];
 
-    // 低音 Bass 序列 (三角波節奏)
     const BASS_SEQUENCE = [
       'A2', '-', 'A2', '-', 'A2', '-', 'C3', 'E3',
       'F2', '-', 'F2', '-', 'F2', '-', 'A2', 'C3',
@@ -943,7 +954,6 @@
 
       const scheduleAheadTime = 0.15;
       while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
-        // 排程當前步長音符
         scheduleBgmStep(currentStep, nextNoteTime);
         currentStep = (currentStep + 1) % MELODY_SEQUENCE.length;
         nextNoteTime += STEP_DURATION;
@@ -955,7 +965,6 @@
     function scheduleBgmStep(step, time) {
       if (!bgmEnabled || !audioCtx || !bgmMasterGain) return;
 
-      // 1. 播放主旋律音符 (方波)
       const mNote = MELODY_SEQUENCE[step];
       const mFreq = NOTE_FREQ[mNote];
       if (mFreq > 0) {
@@ -973,7 +982,6 @@
         osc.stop(time + STEP_DURATION * 0.9);
       }
 
-      // 2. 播放低音 Bass (三角波，沉穩扎實)
       const bNote = BASS_SEQUENCE[step];
       const bFreq = NOTE_FREQ[bNote];
       if (bFreq > 0) {
@@ -1011,21 +1019,18 @@
     }
 
     function updateAudioControlsUI() {
-      // 頂部列
       sfxToggleBtn.textContent = sfxEnabled ? 'SFX: ON' : 'SFX: OFF';
       sfxToggleBtn.classList.toggle('off', !sfxEnabled);
 
       bgmToggleBtn.textContent = bgmEnabled ? 'BGM: ON' : 'BGM: OFF';
       bgmToggleBtn.classList.toggle('off', !bgmEnabled);
 
-      // 選單內
       menuSfxBtn.textContent = sfxEnabled ? 'SFX 音效: 開' : 'SFX 音效: 關';
       menuSfxBtn.classList.toggle('active', sfxEnabled);
 
       menuBgmBtn.textContent = bgmEnabled ? 'BGM 音樂: 開' : 'BGM 音樂: 關';
       menuBgmBtn.classList.toggle('active', bgmEnabled);
 
-      // 同步 Gain
       if (sfxMasterGain && audioCtx) {
         sfxMasterGain.gain.setValueAtTime(sfxEnabled ? 0.35 : 0.0, audioCtx.currentTime);
       }
@@ -1033,7 +1038,6 @@
         bgmMasterGain.gain.setValueAtTime(bgmEnabled ? 0.15 : 0.0, audioCtx.currentTime);
       }
 
-      // 背景音樂啟動或停止
       if (currentState === GameState.PLAYING && !isPaused) {
         if (bgmEnabled && !bgmIsPlaying) {
           startBgm();
@@ -1047,7 +1051,7 @@
       sfxEnabled = !sfxEnabled;
       updateAudioControlsUI();
       if (sfxEnabled) {
-        soundPaddleHit(); // 給個即時反饋
+        soundPaddleHit();
       }
     }
 
@@ -1057,7 +1061,23 @@
     }
 
     // ==========================================================================
-    // 6. 實體物件模型 (Entities: Paddles & Ball)
+    // 6. 畫面更新率 (FPS Limiter) 單鍵切換邏輯
+    // ==========================================================================
+
+    function cycleFps() {
+      currentFpsIdx = (currentFpsIdx + 1) % FPS_MODES.length;
+      updateFpsUI();
+    }
+
+    function updateFpsUI() {
+      const mode = FPS_MODES[currentFpsIdx];
+      const labelText = `FPS: ${mode.label}`;
+      fpsToggleBtn.textContent = labelText;
+      menuFpsBtn.textContent = `FPS: ${mode.label} [點擊切換]`;
+    }
+
+    // ==========================================================================
+    // 7. 實體物件模型 (Entities: Paddles & Ball) - 支援次步進 Delta-time
     // ==========================================================================
 
     const paddle1 = {
@@ -1073,9 +1093,9 @@
         this.up = false;
         this.down = false;
       },
-      update() {
-        if (this.up) this.y -= this.speed;
-        if (this.down) this.y += this.speed;
+      update(dt) {
+        if (this.up) this.y -= this.speed * dt;
+        if (this.down) this.y += this.speed * dt;
         if (this.y < 0) this.y = 0;
         if (this.y + this.height > CANVAS_HEIGHT) {
           this.y = CANVAS_HEIGHT - this.height;
@@ -1125,7 +1145,7 @@
         return simY + ball.size / 2;
       },
 
-      update() {
+      update(dt) {
         if (currentMode === GameMode.PVE) {
           const diffConfig = currentDifficulty;
           const centerOfPaddle = this.y + this.height / 2;
@@ -1142,7 +1162,7 @@
             const diff = targetWithOffset - centerOfPaddle;
 
             if (Math.abs(diff) > 4) {
-              const moveAmount = Math.min(diffConfig.speed, Math.abs(diff) * 0.18);
+              const moveAmount = Math.min(diffConfig.speed * dt, Math.abs(diff) * 0.18 * dt);
               if (diff > 0) {
                 this.y += moveAmount;
               } else {
@@ -1153,12 +1173,12 @@
             const centerOfCourt = CANVAS_HEIGHT / 2;
             const diff = centerOfCourt - centerOfPaddle;
             if (Math.abs(diff) > 6) {
-              this.y += (diff > 0 ? 1 : -1) * (diffConfig.speed * 0.35);
+              this.y += (diff > 0 ? 1 : -1) * (diffConfig.speed * 0.35 * dt);
             }
           }
         } else {
-          if (this.up) this.y -= this.speed;
-          if (this.down) this.y += this.speed;
+          if (this.up) this.y -= this.speed * dt;
+          if (this.down) this.y += this.speed * dt;
         }
 
         if (this.y < 0) this.y = 0;
@@ -1196,17 +1216,17 @@
         paddle2.aiMistakeOffset = (Math.random() - 0.5) * range * 2;
       },
 
-      update() {
+      update(dt) {
         if (serveCountdown > 0) {
-          serveCountdown--;
+          serveCountdown -= dt;
           if (serveCountdown <= 0) {
             serveMessage = '';
           }
           return;
         }
 
-        this.x += this.vx;
-        this.y += this.vy;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
 
         // 1. 上下邊界反彈
         if (this.y <= 0) {
@@ -1266,15 +1286,26 @@
           soundPaddleHit();
         }
 
-        // 4. 得分判定
+        // 4. 得分判定 (穿過左右邊界)
         if (this.x + this.size < 0) {
+          // 立即重定位與停止，防止在次步進 (Sub-step) 中被重複判定
+          this.x = CANVAS_WIDTH / 2 - this.size / 2;
+          this.y = CANVAS_HEIGHT / 2 - this.size / 2;
+          this.vx = 0;
+          this.vy = 0;
           scoreP2++;
           soundScore();
           checkWinnerOrServe(-1);
+          return;
         } else if (this.x > CANVAS_WIDTH) {
+          this.x = CANVAS_WIDTH / 2 - this.size / 2;
+          this.y = CANVAS_HEIGHT / 2 - this.size / 2;
+          this.vx = 0;
+          this.vy = 0;
           scoreP1++;
           soundScore();
           checkWinnerOrServe(1);
+          return;
         }
       },
 
@@ -1286,6 +1317,13 @@
 
     function checkWinnerOrServe(scoredSide) {
       if (scoreP1 >= targetScore || scoreP2 >= targetScore) {
+        // 已達到目標分數，鎖定分數並結束遊戲
+        scoreP1 = Math.min(scoreP1, targetScore);
+        scoreP2 = Math.min(scoreP2, targetScore);
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.x = CANVAS_WIDTH / 2 - ball.size / 2;
+        ball.y = CANVAS_HEIGHT / 2 - ball.size / 2;
         endGame();
       } else {
         ball.reset(scoredSide === 1 ? -1 : 1);
@@ -1293,7 +1331,7 @@
     }
 
     // ==========================================================================
-    // 7. 畫面渲染函式 (Rendering)
+    // 8. 畫面渲染函式 (Rendering)
     // ==========================================================================
 
     function drawCourt() {
@@ -1333,36 +1371,79 @@
       ctx.fillText('PLAYER 1', CANVAS_WIDTH / 2 - 75, 68);
       ctx.fillText(currentMode === GameMode.PVE ? `AI (${currentDifficulty.name})` : 'PLAYER 2', CANVAS_WIDTH / 2 + 75, 68);
 
+      // 角落即時更新率顯示 (Retro Monitor Badge)
+      ctx.font = '10px "Courier New", Courier, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.fillText(`FPS: ${realFpsDisplay} (${FPS_MODES[currentFpsIdx].label})`, 10, 10);
+      ctx.textAlign = 'center';
+
       // 發球提示
       if (serveMessage) {
         ctx.font = 'bold 22px "Courier New", Courier, monospace';
+        ctx.fillStyle = '#ffffff';
         ctx.fillText(serveMessage, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
       }
     }
 
     // ==========================================================================
-    // 8. 遊戲主循環 (Game Loop)
+    // 9. 遊戲主循環 (Game Loop with FPS Throttle & Sub-stepping)
     // ==========================================================================
 
-    function gameLoop() {
-      if (currentState === GameState.PLAYING && !isPaused) {
-        paddle1.update();
-        paddle2.update();
-        ball.update();
+    function gameLoop(now) {
+      requestAnimationFrame(gameLoop);
+
+      const targetFps = FPS_MODES[currentFpsIdx].target;
+
+      // 若有鎖定更新率 (30 / 60 / 144)，且時間間隔未到，跳過此幀渲染以達成鎖幀
+      if (targetFps > 0) {
+        const frameIntervalMs = 1000 / targetFps;
+        const elapsedSinceLastRender = now - lastRenderTimestamp;
+        if (elapsedSinceLastRender < frameIntervalMs - 1.2) {
+          return;
+        }
       }
 
+      // 計算自上一幀以來的真實經過時間 (以 60 FPS = 1.0 為基準正規化)
+      const rawDeltaMs = now - lastPhysicsTimestamp;
+      lastPhysicsTimestamp = now;
+      lastRenderTimestamp = now;
+
+      // 限制最大 delta，避免切換頁面時時間差暴衝
+      const clampedDeltaMs = Math.min(rawDeltaMs, 100);
+      const normalizedDt = clampedDeltaMs / (1000 / 60);
+
+      // 計算即時 FPS
+      frameCounter++;
+      if (now - lastFpsCalcTime >= 500) {
+        realFpsDisplay = Math.round((frameCounter * 1000) / (now - lastFpsCalcTime));
+        frameCounter = 0;
+        lastFpsCalcTime = now;
+      }
+
+      // 物理次步進 (Sub-stepping)：避免低更新率 (如 30 FPS) 造成球速過快穿牆
+      if (currentState === GameState.PLAYING && !isPaused) {
+        let remainingDt = normalizedDt;
+        while (remainingDt > 0 && currentState === GameState.PLAYING && !isPaused) {
+          const stepDt = Math.min(remainingDt, 1.0);
+          paddle1.update(stepDt);
+          paddle2.update(stepDt);
+          ball.update(stepDt);
+          remainingDt -= stepDt;
+        }
+      }
+
+      // 渲染畫面
       if (currentState === GameState.PLAYING || currentState === GameState.GAME_OVER) {
         drawCourt();
         paddle1.draw();
         paddle2.draw();
         ball.draw();
       }
-
-      requestAnimationFrame(gameLoop);
     }
 
     // ==========================================================================
-    // 9. 狀態流轉控制 (State Transitions)
+    // 10. 狀態流轉控制 (State Transitions)
     // ==========================================================================
 
     function startGame(mode) {
@@ -1382,6 +1463,9 @@
       pauseOverlay.classList.add('hidden');
       changelogOverlay.classList.add('hidden');
       pauseToggleBtn.textContent = 'PAUSE (P)';
+
+      lastPhysicsTimestamp = performance.now();
+      lastRenderTimestamp = performance.now();
 
       if (bgmEnabled) {
         startBgm();
@@ -1422,6 +1506,8 @@
       } else {
         pauseOverlay.classList.add('hidden');
         pauseToggleBtn.textContent = 'PAUSE (P)';
+        lastPhysicsTimestamp = performance.now();
+        lastRenderTimestamp = performance.now();
         if (bgmEnabled) {
           startBgm();
         }
@@ -1469,7 +1555,7 @@
     }
 
     // ==========================================================================
-    // 10. 輸入事件監聽 (Keyboard & Touch Listeners)
+    // 11. 輸入事件監聽 (Keyboard & Touch Listeners)
     // ==========================================================================
 
     window.addEventListener('keydown', (e) => {
@@ -1546,7 +1632,7 @@
     setupTouchButton('touchP2Down', () => { paddle2.down = true; }, () => { paddle2.down = false; });
 
     // ==========================================================================
-    // 11. UI 按鈕互動綁定
+    // 12. UI 按鈕互動綁定
     // ==========================================================================
 
     document.getElementById('btnPve').addEventListener('click', () => {
@@ -1595,6 +1681,10 @@
       });
     });
 
+    // 畫面更新率切換 (單一按鈕循環)
+    fpsToggleBtn.addEventListener('click', cycleFps);
+    menuFpsBtn.addEventListener('click', cycleFps);
+
     // 音訊開關
     sfxToggleBtn.addEventListener('click', toggleSfx);
     bgmToggleBtn.addEventListener('click', toggleBgm);
@@ -1613,9 +1703,10 @@
       changelogOverlay.classList.add('hidden');
     });
 
-    // 初始化
+    // 初始化設定
     setTargetScore(10);
     setDifficulty('INTERMEDIATE');
+    updateFpsUI();
     updateAudioControlsUI();
     drawCourt();
     requestAnimationFrame(gameLoop);
