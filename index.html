@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Retro Pong Web v3.0 - 復古乒乓球遊戲</title>
+  <meta name="description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援獨立音效/原創8-bit背景音樂開關、四級 AI 難易度、目標分數自訂與版本更新日誌。" />
+  <meta property="og:title" content="Retro Pong Web v3.0 - 復古乒乓球遊戲" />
+  <meta property="og:description" content="經典黑白復古 Pong 乒乓球遊戲 v3.0，支援獨立音效/原創8-bit背景音樂開關、四級 AI 難易度、目標分數自訂與版本更新日誌。" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <style>
+    /* ==========================================================================
+       1. 全域樣式與復古黑白風格設定 (Classic Retro B&W Theme)
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    /* 遊戲主容器 */
+    #game-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 860px;
+      padding: 10px;
+    }
+
+    /* 頂部輔助資訊列 */
+    .header-bar {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .brand-tag {
+      font-weight: bold;
+      letter-spacing: 2px;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-btn {
+      background: transparent;
+      border: 1px solid #ffffff;
+      color: #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tool-btn:hover {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .tool-btn.off {
+      opacity: 0.5;
+      border-style: dashed;
+    }
+
+    /* Canvas 畫布 */
+    #pongCanvas {
+      background-color: #000000;
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 24px rgba(255, 255, 255, 0.15);
+      image-rendering: pixelated;
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      aspect-ratio: 16 / 10;
+      display: block;
+    }
+
+    /* ==========================================================================
+       2. UI 覆蓋層 (Overlay UI for Menus, Settings, Changelog & Game Over)
+       ========================================================================== */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.93);
+      z-index: 10;
+      text-align: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 主標題 */
+    .game-title {
+      font-size: clamp(26px, 5.2vw, 50px);
+      font-weight: 900;
+      letter-spacing: 5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0px #ffffff;
+      color: #000000;
+      background: #ffffff;
+      padding: 4px 16px;
+      display: inline-block;
+    }
+
+    .game-version-badge {
+      font-size: 11px;
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+      opacity: 0.85;
+      border-bottom: 1px dashed #ffffff;
+      padding-bottom: 2px;
+    }
+
+    /* 遊戲設定區塊 (目標分數與 AI 難度) */
+    .settings-panel {
+      width: 100%;
+      max-width: 580px;
+      border: 1px solid #ffffff;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .setting-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px dotted rgba(255, 255, 255, 0.3);
+      gap: 6px;
+    }
+
+    .setting-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .setting-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* 選項微型切換按鈕 */
+    .opt-btn {
+      background: #000000;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.12s ease-in-out;
+    }
+
+    .opt-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .opt-btn.active {
+      background: #ffffff;
+      color: #000000;
+      font-weight: bold;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    }
+
+    .stepper-btn {
+      background: #000000;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+      font-weight: bold;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .stepper-btn:hover {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .score-display-box {
+      font-size: 13px;
+      font-weight: bold;
+      min-width: 30px;
+      text-align: center;
+      border: 1px solid #ffffff;
+      padding: 2px 5px;
+      background: #111111;
+    }
+
+    .difficulty-desc {
+      font-size: 11px;
+      color: #cccccc;
+      margin-top: 2px;
+      width: 100%;
+      text-align: right;
+    }
+
+    /* 操作說明區塊 */
+    .controls-panel {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      max-width: 580px;
+      margin-bottom: 12px;
+      border: 1px dashed rgba(255, 255, 255, 0.6);
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .control-col {
+      flex: 1;
+      padding: 0 6px;
+    }
+
+    .control-col h3 {
+      font-size: 12px;
+      margin-bottom: 4px;
+      text-decoration: underline;
+      letter-spacing: 1px;
+    }
+
+    .control-row {
+      font-size: 11px;
+      line-height: 1.5;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .key-badge {
+      display: inline-block;
+      border: 1px solid #ffffff;
+      padding: 0px 5px;
+      font-weight: bold;
+      background: #111111;
+    }
+
+    /* 選單按鈕組 */
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .retro-btn {
+      background: #000000;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: clamp(13px, 1.8vw, 15px);
+      font-weight: bold;
+      padding: 9px 14px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+      text-align: center;
+    }
+
+    .retro-btn:hover, .retro-btn:focus {
+      background: #ffffff;
+      color: #000000;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+      outline: none;
+    }
+
+    .retro-btn:active {
+      transform: scale(0.97);
+    }
+
+    .retro-btn.secondary {
+      font-size: 12px;
+      padding: 6px 10px;
+      opacity: 0.85;
+      border-width: 1px;
+    }
+
+    /* 更新日誌視窗 (Changelog Modal) */
+    .changelog-box {
+      width: 100%;
+      max-width: 620px;
+      max-height: 80vh;
+      border: 2px solid #ffffff;
+      background: #050505;
+      padding: 16px 20px;
+      text-align: left;
+      overflow-y: auto;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    }
+
+    .changelog-title {
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 14px;
+      border-bottom: 2px solid #ffffff;
+      padding-bottom: 6px;
+    }
+
+    .version-entry {
+      margin-bottom: 16px;
+      border-bottom: 1px dotted rgba(255, 255, 255, 0.35);
+      padding-bottom: 12px;
+    }
+
+    .version-entry:last-child {
+      border-bottom: none;
+      margin-bottom: 12px;
+    }
+
+    .version-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .version-tag {
+      font-size: 14px;
+      font-weight: bold;
+      background: #ffffff;
+      color: #000000;
+      padding: 1px 6px;
+    }
+
+    .version-badge-note {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .changelog-list {
+      list-style-type: none;
+      font-size: 12px;
+      line-height: 1.6;
+      padding-left: 4px;
+    }
+
+    .changelog-list li {
+      position: relative;
+      padding-left: 14px;
+      margin-bottom: 4px;
+    }
+
+    .changelog-list li::before {
+      content: '■';
+      position: absolute;
+      left: 0;
+      font-size: 8px;
+      top: 2px;
+    }
+
+    /* 遊戲結束訊息 */
+    .winner-title {
+      font-size: clamp(22px, 4.2vw, 42px);
+      font-weight: bold;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1.02); }
+    }
+
+    .final-score {
+      font-size: clamp(24px, 4vw, 40px);
+      font-weight: bold;
+      margin-bottom: 8px;
+      letter-spacing: 3px;
+    }
+
+    .match-meta-info {
+      font-size: 12px;
+      opacity: 0.85;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    /* 行動裝置觸控虛擬控制鍵 */
+    .mobile-controls {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 10px;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-controls {
+        display: flex;
+      }
+    }
+
+    .touch-pad {
+      display: flex;
+      gap: 8px;
+    }
+
+    .touch-btn {
+      background: #111111;
+      border: 1px solid #ffffff;
+      color: #ffffff;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 18px;
+      font-weight: bold;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .touch-btn:active {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    /* 底部資訊列 */
+    .footer-note {
+      margin-top: 10px;
+      font-size: 11px;
+      opacity: 0.6;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <!-- 頂部資訊工具列 (含獨立音效與背景音樂開關) -->
+    <div class="header-bar">
+      <span class="brand-tag">
+        RETRO PONG
+        <span style="background: #ffffff; color: #000000; padding: 1px 4px; font-size: 10px; font-weight: 900;">v3.0</span>
+      </span>
+      <div class="toolbar">
+        <button id="sfxToggleBtn" class="tool-btn" title="切換音效 (SFX)">SFX: ON</button>
+        <button id="bgmToggleBtn" class="tool-btn" title="切換背景音樂 (BGM)">BGM: ON</button>
+        <button id="pauseToggleBtn" class="tool-btn" title="暫停遊戲 (Space/P)">PAUSE (P)</button>
+      </div>
+    </div>
+
+    <!-- 遊戲畫布 (內部邏輯解析度 800 x 500) -->
+    <div style="position: relative; width: 100%; max-width: 800px;">
+      <canvas id="pongCanvas" width="800" height="500"></canvas>
+
+      <!-- 介面狀態 1: 開始頁面 (START_SCREEN) -->
+      <div id="startScreen" class="overlay">
+        <div class="game-title">RETRO PONG</div>
+        <div class="game-version-badge">VERSION 3.0 • RETRO CHIPTUNE EDITION</div>
+
+        <!-- 遊戲設定區塊 (目標分數與 AI 難度) -->
+        <div class="settings-panel">
+          <!-- 目標分數設定 -->
+          <div class="setting-row">
+            <span class="setting-label">
+              <span>●</span> 目標分數 (TARGET):
+            </span>
+            <div class="setting-options">
+              <button class="opt-btn score-preset" data-score="5">5分</button>
+              <button class="opt-btn score-preset active" data-score="10">10分</button>
+              <button class="opt-btn score-preset" data-score="15">15分</button>
+              <button class="opt-btn score-preset" data-score="21">21分</button>
+              <button id="btnScoreMinus" class="stepper-btn" title="減少">-</button>
+              <span id="targetScoreDisplay" class="score-display-box">10</span>
+              <button id="btnScorePlus" class="stepper-btn" title="增加">+</button>
+            </div>
+          </div>
+
+          <!-- PVE 電腦 AI 難易度設定 -->
+          <div class="setting-row">
+            <span class="setting-label">
+              <span>●</span> AI 難易度 (PVE):
+            </span>
+            <div class="setting-options">
+              <button class="opt-btn diff-preset" data-diff="NOVICE">入門</button>
+              <button class="opt-btn diff-preset active" data-diff="INTERMEDIATE">中級</button>
+              <button class="opt-btn diff-preset" data-diff="ADVANCED">高級</button>
+              <button class="opt-btn diff-preset" data-diff="MASTER">大師</button>
+            </div>
+            <div id="diffDesc" class="difficulty-desc">中級：標準速度與防禦，攻守均衡。</div>
+          </div>
+
+          <!-- 音效與音樂獨立控制列 -->
+          <div class="setting-row">
+            <span class="setting-label">
+              <span>●</span> 音效與音樂 (AUDIO):
+            </span>
+            <div class="setting-options">
+              <button id="menuSfxBtn" class="opt-btn active">SFX 音效: 開</button>
+              <button id="menuBgmBtn" class="opt-btn active">BGM 音樂: 開</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作說明區塊 -->
+        <div class="controls-panel">
+          <div class="control-col">
+            <h3>PLAYER 1 (LEFT)</h3>
+            <div class="control-row">
+              <span class="key-badge">W</span> <span>向上 UP</span>
+            </div>
+            <div class="control-row">
+              <span class="key-badge">S</span> <span>向下 DOWN</span>
+            </div>
+          </div>
+          <div class="control-col">
+            <h3>PLAYER 2 (RIGHT)</h3>
+            <div class="control-row">
+              <span class="key-badge">↑</span> <span>向上 UP</span>
+            </div>
+            <div class="control-row">
+              <span class="key-badge">↓</span> <span>向下 DOWN</span>
+            </div>
+            <div style="font-size: 10px; opacity: 0.7; margin-top: 4px;">
+              * PVE 模式右側由 AI 電腦控制
+            </div>
+          </div>
+        </div>
+
+        <!-- 模式選擇按鈕與更新日誌 -->
+        <div class="button-group">
+          <button id="btnPve" class="retro-btn">[ 1 PLAYER (PVE) ]</button>
+          <button id="btnPvp" class="retro-btn">[ 2 PLAYERS (PVP) ]</button>
+          <button id="btnOpenChangelog" class="retro-btn secondary">[ 📜 更新日誌 CHANGELOG ]</button>
+        </div>
+      </div>
+
+      <!-- 更新日誌浮層 (CHANGELOG MODAL) -->
+      <div id="changelogOverlay" class="overlay hidden">
+        <div class="changelog-box">
+          <div class="changelog-title">RETRO PONG • 更新日誌</div>
+
+          <!-- v3.0 -->
+          <div class="version-entry">
+            <div class="version-head">
+              <span class="version-tag">VERSION 3.0</span>
+              <span class="version-badge-note">CURRENT • 音訊重大升級</span>
+            </div>
+            <ul class="changelog-list">
+              <li><strong>音效全面修復</strong>：重構 Web Audio API 啟動器，解決瀏覽器自動播放安全原則導致無聲的問題。</li>
+              <li><strong>8-bit 原創背景音樂 (BGM)</strong>：透過原生合成器即時生成經典街機方波與三角波旋律（100% 原創免版權）。</li>
+              <li><strong>音訊獨立開關控制</strong>：可獨立開啟或關閉「遊戲音效 (SFX)」與「背景音樂 (BGM)」。</li>
+              <li><strong>更新日誌視窗</strong>：主選單新增「更新日誌」按鈕，可隨時查看歷史功能演進。</li>
+            </ul>
+          </div>
+
+          <!-- v2.0 -->
+          <div class="version-entry">
+            <div class="version-head">
+              <span class="version-tag">VERSION 2.0</span>
+              <span class="version-badge-note">AI 與目標分數</span>
+            </div>
+            <ul class="changelog-list">
+              <li><strong>四級 PVE AI 難易度</strong>：新增「入門、中級、高級、大師」四種難度選項。</li>
+              <li><strong>大師級軌跡預測</strong>：大師級 AI 導入牆面鏡射反彈落點推算演算法，挑戰極致反應。</li>
+              <li><strong>目標分數自訂</strong>：支援 PVE / PVP 模式前自由挑選 5、10、15、21 分或加減自訂局數。</li>
+              <li><strong>即時 HUD 狀態</strong>：頂部比分板即時呈現目標分數與對戰模式。</li>
+            </ul>
+          </div>
+
+          <!-- v1.0 -->
+          <div class="version-entry">
+            <div class="version-head">
+              <span class="version-tag">VERSION 1.0</span>
+              <span class="version-badge-note">初始發行</span>
+            </div>
+            <ul class="changelog-list">
+              <li><strong>單檔案架構</strong>：HTML5 Canvas + 純原生 JavaScript (ES6+)，免安裝即開即玩。</li>
+              <li><strong>經典黑白復古風格</strong>：800x500 街機比例、點陣虛線中線與等寬字體視覺。</li>
+              <li><strong>物理與動力學機制</strong>：板子邊緣反彈角發散模擬，每一次成功反彈球速微增 6%。</li>
+              <li><strong>雙人與觸控支援</strong>：支援鍵盤雙人對戰 (W/S, ↑/↓) 與行動端虛擬觸控按鍵。</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin-top: 14px;">
+            <button id="btnCloseChangelog" class="retro-btn" style="width: 100%; max-width: 220px;">[ 關閉 CLOSE ]</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 介面狀態 3: 結算畫面 (GAME_OVER) -->
+      <div id="gameOverScreen" class="overlay hidden">
+        <div id="winnerText" class="winner-title">PLAYER 1 WINS!</div>
+        <div id="finalScoreText" class="final-score">10 : 7</div>
+        <div id="matchMetaText" class="match-meta-info">TARGET: 10 PTS | MODE: PVE (中級)</div>
+        <div class="button-group">
+          <button id="btnRestart" class="retro-btn">[ RESTART ]</button>
+          <button id="btnMainMenu" class="retro-btn">[ MAIN MENU ]</button>
+        </div>
+      </div>
+
+      <!-- 暫停提示浮層 -->
+      <div id="pauseOverlay" class="overlay hidden" style="background: rgba(0, 0, 0, 0.82);">
+        <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; margin-bottom: 20px;">PAUSED</div>
+        <div class="button-group">
+          <button id="btnResume" class="retro-btn">[ RESUME ]</button>
+          <button id="btnQuitMatch" class="retro-btn">[ QUIT MATCH ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 行動裝置虛擬觸控按鍵 -->
+    <div class="mobile-controls">
+      <div class="touch-pad">
+        <button id="touchP1Up" class="touch-btn" aria-label="P1 Up">W</button>
+        <button id="touchP1Down" class="touch-btn" aria-label="P1 Down">S</button>
+      </div>
+      <div style="font-size: 11px; align-self: center; opacity: 0.6;">TOUCH CONTROLS</div>
+      <div class="touch-pad">
+        <button id="touchP2Up" class="touch-btn" aria-label="P2 Up">▲</button>
+        <button id="touchP2Down" class="touch-btn" aria-label="P2 Down">▼</button>
+      </div>
+    </div>
+
+    <div class="footer-note">RETRO PONG v3.0 | PRESS [SPACE] OR [P] TO PAUSE | ESC TO RETURN TO MENU</div>
+  </div>
+
+  <!-- ==========================================================================
+       3. 原生 JavaScript 遊戲主程式 (Vanilla JS ES6+)
+       ========================================================================== -->
+  <script>
+    /**
+     * Retro Pong Web v3.0
+     * 新增特點：
+     * 1. 徹底修復 Web Audio API 自動播放策略，保證首次互動即解鎖音效
+     * 2. 內建 100% 原創免版權 8-bit Chiptune 背景音樂程序合成器 (零依賴、無外部音檔)
+     * 3. 獨立 SFX 音效與 BGM 背景音樂切換開關
+     * 4. 更新日誌 (Changelog) 彈窗
+     */
+
+    // --- 遊戲常數與設定 ---
+    const CANVAS_WIDTH = 800;
+    const CANVAS_HEIGHT = 500;
+    const PADDLE_WIDTH = 12;
+    const PADDLE_HEIGHT = 80;
+    const PADDLE_SPEED = 6.8;
+    const BALL_SIZE = 12;
+    const INITIAL_BALL_SPEED = 5.0;
+    const SPEED_INCREMENT = 1.06;
+    const MAX_BALL_SPEED = 14.0;
+
+    const GameState = {
+      START_SCREEN: 'START_SCREEN',
+      PLAYING: 'PLAYING',
+      GAME_OVER: 'GAME_OVER'
+    };
+
+    const GameMode = {
+      PVE: 'PVE',
+      PVP: 'PVP'
+    };
+
+    const AIDifficulty = {
+      NOVICE: {
+        id: 'NOVICE',
+        name: '入門',
+        desc: '入門：移動緩慢、反應較遲鈍，適合輕鬆休閒。',
+        speed: 3.4,
+        errorRange: 36,
+        reactionZone: 0.50,
+        predictBounce: false
+      },
+      INTERMEDIATE: {
+        id: 'INTERMEDIATE',
+        name: '中級',
+        desc: '中級：標準速度與防禦，攻守均衡。',
+        speed: 4.8,
+        errorRange: 20,
+        reactionZone: 0.35,
+        predictBounce: false
+      },
+      ADVANCED: {
+        id: 'ADVANCED',
+        name: '高級',
+        desc: '高級：快速攔截、反應敏銳，具備強大壓迫感。',
+        speed: 6.2,
+        errorRange: 7,
+        reactionZone: 0.15,
+        predictBounce: false
+      },
+      MASTER: {
+        id: 'MASTER',
+        name: '大師',
+        desc: '大師：極限高速反應，幾乎零失誤，預測反彈落點！',
+        speed: 7.6,
+        errorRange: 2,
+        reactionZone: 0.0,
+        predictBounce: true
+      }
+    };
+
+    // --- 全域狀態變數 ---
+    let currentState = GameState.START_SCREEN;
+    let currentMode = GameMode.PVE;
+    let currentDifficulty = AIDifficulty.INTERMEDIATE;
+    let targetScore = 10;
+    let isPaused = false;
+
+    // 音訊開關狀態
+    let sfxEnabled = true;
+    let bgmEnabled = true;
+
+    // 即時比分
+    let scoreP1 = 0;
+    let scoreP2 = 0;
+
+    // 發球冷卻計時
+    let serveCountdown = 0;
+    let serveMessage = '';
+
+    // Canvas 與繪圖環境
+    const canvas = document.getElementById('pongCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // DOM 元素參考
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const changelogOverlay = document.getElementById('changelogOverlay');
+    const winnerText = document.getElementById('winnerText');
+    const finalScoreText = document.getElementById('finalScoreText');
+    const matchMetaText = document.getElementById('matchMetaText');
+    const sfxToggleBtn = document.getElementById('sfxToggleBtn');
+    const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+    const pauseToggleBtn = document.getElementById('pauseToggleBtn');
+    const targetScoreDisplay = document.getElementById('targetScoreDisplay');
+    const diffDesc = document.getElementById('diffDesc');
+    const menuSfxBtn = document.getElementById('menuSfxBtn');
+    const menuBgmBtn = document.getElementById('menuBgmBtn');
+
+    // ==========================================================================
+    // 4. 強韌的 Web Audio 音訊核心 (SFX + 原創 8-bit BGM 合成器)
+    // ==========================================================================
+    let audioCtx = null;
+    let sfxMasterGain = null;
+    let bgmMasterGain = null;
+    let bgmIsPlaying = false;
+    let bgmTimerId = null;
+
+    /**
+     * 安全建立並解鎖瀏覽器 AudioContext
+     */
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+
+          // 建立獨立的音效與音樂 Gain 總線
+          sfxMasterGain = audioCtx.createGain();
+          sfxMasterGain.gain.setValueAtTime(sfxEnabled ? 0.35 : 0.0, audioCtx.currentTime);
+          sfxMasterGain.connect(audioCtx.destination);
+
+          bgmMasterGain = audioCtx.createGain();
+          bgmMasterGain.gain.setValueAtTime(bgmEnabled ? 0.15 : 0.0, audioCtx.currentTime);
+          bgmMasterGain.connect(audioCtx.destination);
+        }
+      }
+
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      return audioCtx;
+    }
+
+    // 任何使用者操作皆主動解鎖音訊
+    ['click', 'keydown', 'touchstart', 'mousedown'].forEach(evtType => {
+      window.addEventListener(evtType, () => {
+        initAudio();
+        // 若在遊戲中且 BGM 開啟，確保背景音樂啟動
+        if (currentState === GameState.PLAYING && !isPaused && bgmEnabled && !bgmIsPlaying) {
+          startBgm();
+        }
+      }, { passive: true });
+    });
+
+    /**
+     * 播放短音效 (8-bit 方波)
+     */
+    function playTone(freq, duration = 0.08, type = 'square') {
+      if (!sfxEnabled) return;
+      try {
+        const actx = initAudio();
+        if (!actx || !sfxMasterGain) return;
+
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, actx.currentTime);
+
+        const now = actx.currentTime;
+        gain.gain.setValueAtTime(1.0, now);
+        // 使用安全的 linearRamp 避免 exponentialRamp 在 0 時報錯
+        gain.gain.linearRampToValueAtTime(0.01, now + duration);
+
+        osc.connect(gain);
+        gain.connect(sfxMasterGain);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      } catch (err) {
+        console.warn('Audio tone error:', err);
+      }
+    }
+
+    // --- 具體音效 ---
+    function soundPaddleHit() {
+      // 撞板：清脆的 466Hz (Bb4) 快速方波
+      playTone(466, 0.08, 'square');
+    }
+
+    function soundWallHit() {
+      // 撞牆：低沈 220Hz (A3) 方波
+      playTone(220, 0.06, 'square');
+    }
+
+    function soundScore() {
+      // 得分：歡樂雙音
+      playTone(392, 0.09, 'square');
+      setTimeout(() => playTone(523, 0.14, 'square'), 90);
+    }
+
+    function soundGameOver() {
+      // 獲勝音效：經典街機四階勝利琶音
+      const notes = [261, 329, 392, 523];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => playTone(freq, 0.12, 'square'), idx * 110);
+      });
+    }
+
+    // ==========================================================================
+    // 5. 原創 8-bit Chiptune 背景音樂程序生成器 (100% 免版權、零外部檔案)
+    // ==========================================================================
+    // 經典復古小調琶音迴圈 (Am -> F -> C -> G)
+    const BGM_TEMPO = 136; // BPM
+    const STEP_DURATION = 60 / BGM_TEMPO / 4; // 16分音符長度
+
+    // 音符頻率對照表
+    const NOTE_FREQ = {
+      'A2': 110.00, 'C3': 130.81, 'E3': 164.81, 'F2': 87.31,
+      'G2': 98.00,  'A3': 220.00, 'B3': 246.94, 'C4': 261.63,
+      'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00,
+      'A4': 440.00, 'B4': 493.88, 'C5': 523.25, 'E5': 659.25,
+      '-': 0
+    };
+
+    // 主旋律序列 (32 拍循環)
+    const MELODY_SEQUENCE = [
+      'A4', 'C5', 'E5', 'A4', 'C5', 'E5', 'A4', 'C5',
+      'F4', 'A4', 'C5', 'F4', 'A4', 'C5', 'F4', 'A4',
+      'C4', 'E4', 'G4', 'C5', 'E4', 'G4', 'C5', 'E4',
+      'G4', 'B4', 'D4', 'G4', 'B4', 'D4', 'G4', 'B4'
+    ];
+
+    // 低音 Bass 序列 (三角波節奏)
+    const BASS_SEQUENCE = [
+      'A2', '-', 'A2', '-', 'A2', '-', 'C3', 'E3',
+      'F2', '-', 'F2', '-', 'F2', '-', 'A2', 'C3',
+      'C3', '-', 'C3', '-', 'C3', '-', 'E3', 'G2',
+      'G2', '-', 'G2', '-', 'G2', '-', 'B3', 'D4'
+    ];
+
+    let currentStep = 0;
+    let nextNoteTime = 0;
+
+    function bgmScheduler() {
+      if (!bgmIsPlaying || !audioCtx) return;
+
+      const scheduleAheadTime = 0.15;
+      while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+        // 排程當前步長音符
+        scheduleBgmStep(currentStep, nextNoteTime);
+        currentStep = (currentStep + 1) % MELODY_SEQUENCE.length;
+        nextNoteTime += STEP_DURATION;
+      }
+
+      bgmTimerId = setTimeout(bgmScheduler, 40);
+    }
+
+    function scheduleBgmStep(step, time) {
+      if (!bgmEnabled || !audioCtx || !bgmMasterGain) return;
+
+      // 1. 播放主旋律音符 (方波)
+      const mNote = MELODY_SEQUENCE[step];
+      const mFreq = NOTE_FREQ[mNote];
+      if (mFreq > 0) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(mFreq, time);
+
+        gain.gain.setValueAtTime(0.18, time);
+        gain.gain.linearRampToValueAtTime(0.01, time + STEP_DURATION * 0.85);
+
+        osc.connect(gain);
+        gain.connect(bgmMasterGain);
+        osc.start(time);
+        osc.stop(time + STEP_DURATION * 0.9);
+      }
+
+      // 2. 播放低音 Bass (三角波，沉穩扎實)
+      const bNote = BASS_SEQUENCE[step];
+      const bFreq = NOTE_FREQ[bNote];
+      if (bFreq > 0) {
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.setValueAtTime(bFreq, time);
+
+        bassGain.gain.setValueAtTime(0.38, time);
+        bassGain.gain.linearRampToValueAtTime(0.05, time + STEP_DURATION * 0.95);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(bgmMasterGain);
+        bassOsc.start(time);
+        bassOsc.stop(time + STEP_DURATION);
+      }
+    }
+
+    function startBgm() {
+      const actx = initAudio();
+      if (!actx || bgmIsPlaying) return;
+
+      bgmIsPlaying = true;
+      currentStep = 0;
+      nextNoteTime = actx.currentTime + 0.05;
+      bgmScheduler();
+    }
+
+    function stopBgm() {
+      bgmIsPlaying = false;
+      if (bgmTimerId) {
+        clearTimeout(bgmTimerId);
+        bgmTimerId = null;
+      }
+    }
+
+    function updateAudioControlsUI() {
+      // 頂部列
+      sfxToggleBtn.textContent = sfxEnabled ? 'SFX: ON' : 'SFX: OFF';
+      sfxToggleBtn.classList.toggle('off', !sfxEnabled);
+
+      bgmToggleBtn.textContent = bgmEnabled ? 'BGM: ON' : 'BGM: OFF';
+      bgmToggleBtn.classList.toggle('off', !bgmEnabled);
+
+      // 選單內
+      menuSfxBtn.textContent = sfxEnabled ? 'SFX 音效: 開' : 'SFX 音效: 關';
+      menuSfxBtn.classList.toggle('active', sfxEnabled);
+
+      menuBgmBtn.textContent = bgmEnabled ? 'BGM 音樂: 開' : 'BGM 音樂: 關';
+      menuBgmBtn.classList.toggle('active', bgmEnabled);
+
+      // 同步 Gain
+      if (sfxMasterGain && audioCtx) {
+        sfxMasterGain.gain.setValueAtTime(sfxEnabled ? 0.35 : 0.0, audioCtx.currentTime);
+      }
+      if (bgmMasterGain && audioCtx) {
+        bgmMasterGain.gain.setValueAtTime(bgmEnabled ? 0.15 : 0.0, audioCtx.currentTime);
+      }
+
+      // 背景音樂啟動或停止
+      if (currentState === GameState.PLAYING && !isPaused) {
+        if (bgmEnabled && !bgmIsPlaying) {
+          startBgm();
+        } else if (!bgmEnabled && bgmIsPlaying) {
+          stopBgm();
+        }
+      }
+    }
+
+    function toggleSfx() {
+      sfxEnabled = !sfxEnabled;
+      updateAudioControlsUI();
+      if (sfxEnabled) {
+        soundPaddleHit(); // 給個即時反饋
+      }
+    }
+
+    function toggleBgm() {
+      bgmEnabled = !bgmEnabled;
+      updateAudioControlsUI();
+    }
+
+    // ==========================================================================
+    // 6. 實體物件模型 (Entities: Paddles & Ball)
+    // ==========================================================================
+
+    const paddle1 = {
+      x: 30,
+      y: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
+      width: PADDLE_WIDTH,
+      height: PADDLE_HEIGHT,
+      speed: PADDLE_SPEED,
+      up: false,
+      down: false,
+      reset() {
+        this.y = (CANVAS_HEIGHT - this.height) / 2;
+        this.up = false;
+        this.down = false;
+      },
+      update() {
+        if (this.up) this.y -= this.speed;
+        if (this.down) this.y += this.speed;
+        if (this.y < 0) this.y = 0;
+        if (this.y + this.height > CANVAS_HEIGHT) {
+          this.y = CANVAS_HEIGHT - this.height;
+        }
+      },
+      draw() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+    };
+
+    const paddle2 = {
+      x: CANVAS_WIDTH - 30 - PADDLE_WIDTH,
+      y: (CANVAS_HEIGHT - PADDLE_HEIGHT) / 2,
+      width: PADDLE_WIDTH,
+      height: PADDLE_HEIGHT,
+      speed: PADDLE_SPEED,
+      up: false,
+      down: false,
+      aiMistakeOffset: 0,
+
+      reset() {
+        this.y = (CANVAS_HEIGHT - this.height) / 2;
+        this.up = false;
+        this.down = false;
+        this.aiMistakeOffset = 0;
+      },
+
+      calculatePredictedY() {
+        if (ball.vx <= 0) return CANVAS_HEIGHT / 2;
+        let simX = ball.x;
+        let simY = ball.y;
+        let simVy = ball.vy;
+        const targetX = this.x;
+
+        while (simX < targetX) {
+          simX += ball.vx;
+          simY += simVy;
+          if (simY <= 0) {
+            simY = 0;
+            simVy = -simVy;
+          } else if (simY + ball.size >= CANVAS_HEIGHT) {
+            simY = CANVAS_HEIGHT - ball.size;
+            simVy = -simVy;
+          }
+        }
+        return simY + ball.size / 2;
+      },
+
+      update() {
+        if (currentMode === GameMode.PVE) {
+          const diffConfig = currentDifficulty;
+          const centerOfPaddle = this.y + this.height / 2;
+          const ballNormalizedX = ball.x / CANVAS_WIDTH;
+          const shouldReact = (ball.vx > 0) && (ballNormalizedX >= diffConfig.reactionZone);
+
+          if (shouldReact) {
+            let targetY = ball.y + ball.size / 2;
+            if (diffConfig.predictBounce) {
+              targetY = this.calculatePredictedY();
+            }
+
+            const targetWithOffset = targetY + this.aiMistakeOffset;
+            const diff = targetWithOffset - centerOfPaddle;
+
+            if (Math.abs(diff) > 4) {
+              const moveAmount = Math.min(diffConfig.speed, Math.abs(diff) * 0.18);
+              if (diff > 0) {
+                this.y += moveAmount;
+              } else {
+                this.y -= moveAmount;
+              }
+            }
+          } else {
+            const centerOfCourt = CANVAS_HEIGHT / 2;
+            const diff = centerOfCourt - centerOfPaddle;
+            if (Math.abs(diff) > 6) {
+              this.y += (diff > 0 ? 1 : -1) * (diffConfig.speed * 0.35);
+            }
+          }
+        } else {
+          if (this.up) this.y -= this.speed;
+          if (this.down) this.y += this.speed;
+        }
+
+        if (this.y < 0) this.y = 0;
+        if (this.y + this.height > CANVAS_HEIGHT) {
+          this.y = CANVAS_HEIGHT - this.height;
+        }
+      },
+      draw() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+    };
+
+    const ball = {
+      x: CANVAS_WIDTH / 2 - BALL_SIZE / 2,
+      y: CANVAS_HEIGHT / 2 - BALL_SIZE / 2,
+      size: BALL_SIZE,
+      vx: 0,
+      vy: 0,
+      currentSpeed: INITIAL_BALL_SPEED,
+
+      reset(direction = 1) {
+        this.x = CANVAS_WIDTH / 2 - this.size / 2;
+        this.y = CANVAS_HEIGHT / 2 - this.size / 2;
+        this.currentSpeed = INITIAL_BALL_SPEED;
+
+        const angle = (Math.random() * 0.8 - 0.4);
+        this.vx = Math.cos(angle) * this.currentSpeed * direction;
+        this.vy = Math.sin(angle) * this.currentSpeed;
+
+        serveCountdown = 50;
+        serveMessage = 'READY...';
+
+        const range = currentDifficulty.errorRange;
+        paddle2.aiMistakeOffset = (Math.random() - 0.5) * range * 2;
+      },
+
+      update() {
+        if (serveCountdown > 0) {
+          serveCountdown--;
+          if (serveCountdown <= 0) {
+            serveMessage = '';
+          }
+          return;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // 1. 上下邊界反彈
+        if (this.y <= 0) {
+          this.y = 0;
+          this.vy = -this.vy;
+          soundWallHit();
+        } else if (this.y + this.size >= CANVAS_HEIGHT) {
+          this.y = CANVAS_HEIGHT - this.size;
+          this.vy = -this.vy;
+          soundWallHit();
+        }
+
+        // 2. 左側板子 (P1) 碰撞
+        if (
+          this.vx < 0 &&
+          this.x <= paddle1.x + paddle1.width &&
+          this.x + this.size >= paddle1.x &&
+          this.y + this.size >= paddle1.y &&
+          this.y <= paddle1.y + paddle1.height
+        ) {
+          const hitOffset = (this.y + this.size / 2) - (paddle1.y + paddle1.height / 2);
+          const normalizedOffset = hitOffset / (paddle1.height / 2);
+
+          const maxBounceAngle = (50 * Math.PI) / 180;
+          const bounceAngle = normalizedOffset * maxBounceAngle;
+
+          this.currentSpeed = Math.min(this.currentSpeed * SPEED_INCREMENT, MAX_BALL_SPEED);
+          this.vx = Math.cos(bounceAngle) * this.currentSpeed;
+          this.vy = Math.sin(bounceAngle) * this.currentSpeed;
+          this.x = paddle1.x + paddle1.width + 1;
+
+          soundPaddleHit();
+
+          const range = currentDifficulty.errorRange;
+          paddle2.aiMistakeOffset = (Math.random() - 0.5) * range * 2;
+        }
+
+        // 3. 右側板子 (P2 / AI) 碰撞
+        if (
+          this.vx > 0 &&
+          this.x + this.size >= paddle2.x &&
+          this.x <= paddle2.x + paddle2.width &&
+          this.y + this.size >= paddle2.y &&
+          this.y <= paddle2.y + paddle2.height
+        ) {
+          const hitOffset = (this.y + this.size / 2) - (paddle2.y + paddle2.height / 2);
+          const normalizedOffset = hitOffset / (paddle2.height / 2);
+
+          const maxBounceAngle = (50 * Math.PI) / 180;
+          const bounceAngle = normalizedOffset * maxBounceAngle;
+
+          this.currentSpeed = Math.min(this.currentSpeed * SPEED_INCREMENT, MAX_BALL_SPEED);
+          this.vx = -Math.cos(bounceAngle) * this.currentSpeed;
+          this.vy = Math.sin(bounceAngle) * this.currentSpeed;
+          this.x = paddle2.x - this.size - 1;
+
+          soundPaddleHit();
+        }
+
+        // 4. 得分判定
+        if (this.x + this.size < 0) {
+          scoreP2++;
+          soundScore();
+          checkWinnerOrServe(-1);
+        } else if (this.x > CANVAS_WIDTH) {
+          scoreP1++;
+          soundScore();
+          checkWinnerOrServe(1);
+        }
+      },
+
+      draw() {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+      }
+    };
+
+    function checkWinnerOrServe(scoredSide) {
+      if (scoreP1 >= targetScore || scoreP2 >= targetScore) {
+        endGame();
+      } else {
+        ball.reset(scoredSide === 1 ? -1 : 1);
+      }
+    }
+
+    // ==========================================================================
+    // 7. 畫面渲染函式 (Rendering)
+    // ==========================================================================
+
+    function drawCourt() {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // 中央分割虛線
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([12, 10]);
+      ctx.beginPath();
+      ctx.moveTo(CANVAS_WIDTH / 2, 0);
+      ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 頂部比分
+      ctx.font = 'bold 44px "Courier New", Courier, monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      ctx.fillText(scoreP1.toString(), CANVAS_WIDTH / 2 - 75, 18);
+      ctx.fillText(scoreP2.toString(), CANVAS_WIDTH / 2 + 75, 18);
+
+      // 頂部狀態 HUD
+      ctx.font = 'bold 12px "Courier New", Courier, monospace';
+      ctx.fillText(`TARGET: ${targetScore} PTS`, CANVAS_WIDTH / 2, 16);
+
+      const modeLabel = (currentMode === GameMode.PVE)
+        ? `PVE [${currentDifficulty.name}]`
+        : 'PVP [2 PLAYERS]';
+      ctx.fillText(modeLabel, CANVAS_WIDTH / 2, 34);
+
+      // 玩家角色標籤
+      ctx.font = '12px "Courier New", Courier, monospace';
+      ctx.fillText('PLAYER 1', CANVAS_WIDTH / 2 - 75, 68);
+      ctx.fillText(currentMode === GameMode.PVE ? `AI (${currentDifficulty.name})` : 'PLAYER 2', CANVAS_WIDTH / 2 + 75, 68);
+
+      // 發球提示
+      if (serveMessage) {
+        ctx.font = 'bold 22px "Courier New", Courier, monospace';
+        ctx.fillText(serveMessage, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+      }
+    }
+
+    // ==========================================================================
+    // 8. 遊戲主循環 (Game Loop)
+    // ==========================================================================
+
+    function gameLoop() {
+      if (currentState === GameState.PLAYING && !isPaused) {
+        paddle1.update();
+        paddle2.update();
+        ball.update();
+      }
+
+      if (currentState === GameState.PLAYING || currentState === GameState.GAME_OVER) {
+        drawCourt();
+        paddle1.draw();
+        paddle2.draw();
+        ball.draw();
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // ==========================================================================
+    // 9. 狀態流轉控制 (State Transitions)
+    // ==========================================================================
+
+    function startGame(mode) {
+      initAudio();
+      currentMode = mode;
+      scoreP1 = 0;
+      scoreP2 = 0;
+      isPaused = false;
+
+      paddle1.reset();
+      paddle2.reset();
+      ball.reset(Math.random() > 0.5 ? 1 : -1);
+
+      currentState = GameState.PLAYING;
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      changelogOverlay.classList.add('hidden');
+      pauseToggleBtn.textContent = 'PAUSE (P)';
+
+      if (bgmEnabled) {
+        startBgm();
+      }
+    }
+
+    function endGame() {
+      currentState = GameState.GAME_OVER;
+      stopBgm();
+      soundGameOver();
+
+      let winnerName = 'PLAYER 1 WINS!';
+      if (scoreP2 >= targetScore) {
+        winnerName = (currentMode === GameMode.PVE)
+          ? `COMPUTER [${currentDifficulty.name}] WINS!`
+          : 'PLAYER 2 WINS!';
+      }
+
+      winnerText.textContent = winnerName;
+      finalScoreText.textContent = `${scoreP1} : ${scoreP2}`;
+
+      const metaStr = (currentMode === GameMode.PVE)
+        ? `TARGET: ${targetScore} PTS | MODE: PVE (${currentDifficulty.name})`
+        : `TARGET: ${targetScore} PTS | MODE: 2 PLAYERS (PVP)`;
+      matchMetaText.textContent = metaStr;
+
+      gameOverScreen.classList.remove('hidden');
+      pauseOverlay.classList.add('hidden');
+    }
+
+    function togglePause() {
+      if (currentState !== GameState.PLAYING) return;
+      isPaused = !isPaused;
+      if (isPaused) {
+        pauseOverlay.classList.remove('hidden');
+        pauseToggleBtn.textContent = 'RESUME (P)';
+        stopBgm();
+      } else {
+        pauseOverlay.classList.add('hidden');
+        pauseToggleBtn.textContent = 'PAUSE (P)';
+        if (bgmEnabled) {
+          startBgm();
+        }
+      }
+    }
+
+    function returnToMainMenu() {
+      currentState = GameState.START_SCREEN;
+      isPaused = false;
+      stopBgm();
+      startScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      changelogOverlay.classList.add('hidden');
+      pauseToggleBtn.textContent = 'PAUSE (P)';
+    }
+
+    function setTargetScore(val) {
+      const clamped = Math.max(3, Math.min(50, val));
+      targetScore = clamped;
+      targetScoreDisplay.textContent = targetScore.toString();
+
+      document.querySelectorAll('.score-preset').forEach(btn => {
+        if (parseInt(btn.dataset.score, 10) === targetScore) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function setDifficulty(diffKey) {
+      if (AIDifficulty[diffKey]) {
+        currentDifficulty = AIDifficulty[diffKey];
+        diffDesc.textContent = currentDifficulty.desc;
+
+        document.querySelectorAll('.diff-preset').forEach(btn => {
+          if (btn.dataset.diff === diffKey) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    // ==========================================================================
+    // 10. 輸入事件監聽 (Keyboard & Touch Listeners)
+    // ==========================================================================
+
+    window.addEventListener('keydown', (e) => {
+      initAudio();
+
+      // P1 控制 (W / S)
+      if (e.key === 'w' || e.key === 'W') {
+        paddle1.up = true;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        paddle1.down = true;
+      }
+
+      // P2 控制 (上 / 下 方向鍵)
+      if (e.key === 'ArrowUp') {
+        paddle2.up = true;
+        e.preventDefault();
+      }
+      if (e.key === 'ArrowDown') {
+        paddle2.down = true;
+        e.preventDefault();
+      }
+
+      // 暫停切換 (Space 或 P)
+      if (e.code === 'Space' || e.key === 'p' || e.key === 'P') {
+        if (currentState === GameState.PLAYING) {
+          togglePause();
+          e.preventDefault();
+        }
+      }
+
+      // 返回主選單 (Escape)
+      if (e.key === 'Escape') {
+        if (!changelogOverlay.classList.contains('hidden')) {
+          changelogOverlay.classList.add('hidden');
+        } else if (currentState === GameState.PLAYING || currentState === GameState.GAME_OVER) {
+          returnToMainMenu();
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w' || e.key === 'W') paddle1.up = false;
+      if (e.key === 's' || e.key === 'S') paddle1.down = false;
+      if (e.key === 'ArrowUp') paddle2.up = false;
+      if (e.key === 'ArrowDown') paddle2.down = false;
+    });
+
+    function setupTouchButton(elementId, onPress, onRelease) {
+      const btn = document.getElementById(elementId);
+      if (!btn) return;
+
+      const startHandler = (e) => {
+        e.preventDefault();
+        initAudio();
+        onPress();
+      };
+      const endHandler = (e) => {
+        e.preventDefault();
+        onRelease();
+      };
+
+      btn.addEventListener('touchstart', startHandler, { passive: false });
+      btn.addEventListener('touchend', endHandler, { passive: false });
+      btn.addEventListener('touchcancel', endHandler, { passive: false });
+      btn.addEventListener('mousedown', startHandler);
+      btn.addEventListener('mouseup', endHandler);
+      btn.addEventListener('mouseleave', endHandler);
+    }
+
+    setupTouchButton('touchP1Up', () => { paddle1.up = true; }, () => { paddle1.up = false; });
+    setupTouchButton('touchP1Down', () => { paddle1.down = true; }, () => { paddle1.down = false; });
+    setupTouchButton('touchP2Up', () => { paddle2.up = true; }, () => { paddle2.up = false; });
+    setupTouchButton('touchP2Down', () => { paddle2.down = true; }, () => { paddle2.down = false; });
+
+    // ==========================================================================
+    // 11. UI 按鈕互動綁定
+    // ==========================================================================
+
+    document.getElementById('btnPve').addEventListener('click', () => {
+      startGame(GameMode.PVE);
+    });
+
+    document.getElementById('btnPvp').addEventListener('click', () => {
+      startGame(GameMode.PVP);
+    });
+
+    document.getElementById('btnRestart').addEventListener('click', () => {
+      startGame(currentMode);
+    });
+
+    document.getElementById('btnMainMenu').addEventListener('click', () => {
+      returnToMainMenu();
+    });
+
+    document.getElementById('btnResume').addEventListener('click', () => {
+      togglePause();
+    });
+
+    document.getElementById('btnQuitMatch').addEventListener('click', () => {
+      returnToMainMenu();
+    });
+
+    // 目標分數設定
+    document.querySelectorAll('.score-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setTargetScore(parseInt(btn.dataset.score, 10));
+      });
+    });
+
+    document.getElementById('btnScoreMinus').addEventListener('click', () => {
+      setTargetScore(targetScore - 1);
+    });
+
+    document.getElementById('btnScorePlus').addEventListener('click', () => {
+      setTargetScore(targetScore + 1);
+    });
+
+    // AI 難度設定
+    document.querySelectorAll('.diff-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setDifficulty(btn.dataset.diff);
+      });
+    });
+
+    // 音訊開關
+    sfxToggleBtn.addEventListener('click', toggleSfx);
+    bgmToggleBtn.addEventListener('click', toggleBgm);
+    menuSfxBtn.addEventListener('click', toggleSfx);
+    menuBgmBtn.addEventListener('click', toggleBgm);
+
+    pauseToggleBtn.addEventListener('click', togglePause);
+
+    // 更新日誌彈窗開關
+    document.getElementById('btnOpenChangelog').addEventListener('click', () => {
+      initAudio();
+      changelogOverlay.classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseChangelog').addEventListener('click', () => {
+      changelogOverlay.classList.add('hidden');
+    });
+
+    // 初始化
+    setTargetScore(10);
+    setDifficulty('INTERMEDIATE');
+    updateAudioControlsUI();
+    drawCourt();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
